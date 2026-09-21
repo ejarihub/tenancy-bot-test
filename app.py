@@ -439,6 +439,11 @@ def verify_webhook(request: Request) -> Response:
 
 @app.post("/webhook")
 async def receive_webhook(request: Request, background_tasks: BackgroundTasks) -> dict[str, str]:
-    payload = await request.json()
-    background_tasks.add_task(process_webhook, payload)
-    return {"status": "accepted"}
+    form = await request.form()
+sender = str(form.get("From", "")).replace("whatsapp:", "")
+message = str(form.get("Body", ""))
+
+if sender and message:
+    background_tasks.add_task(handle_text_message, sender, message)
+
+return {"status": "accepted"}
