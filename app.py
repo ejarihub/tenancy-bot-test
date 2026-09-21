@@ -129,33 +129,25 @@ def send_whatsapp_text(to: str, body: str) -> None:
         response.raise_for_status()
 
 
-def send_whatsapp_document(to: str, pdf_path: Path) -> None:
-    token = env("WHATSAPP_TOKEN")
-    phone_number_id = env("PHONE_NUMBER_ID")
-    auth_headers = {"Authorization": f"Bearer {token}"}
-    with pdf_path.open("rb") as handle:
-        upload = requests.post(
-            graph_url(f"{phone_number_id}/media"),
-            headers=auth_headers,
-            data={"messaging_product": "whatsapp", "type": "application/pdf"},
-            files={"file": (pdf_path.name, handle, "application/pdf")},
-            timeout=60,
+def send_whatsapp_text(to: str, body: str) -> None:
+    account_sid = env("TWILIO_ACCOUNT_SID")
+    auth_token = env("TWILIO_AUTH_TOKEN")
+    from_number = env("TWILIO_WHATSAPP_FROM")
+
+    client = Client(account_sid, auth_token)
+
+    if not to.startswith("whatsapp:"):
+        to = f"whatsapp:{to}"
+
+    if not from_number.startswith("whatsapp:"):
+        from_number = f"whatsapp:{from_number}"
+
+    for start in range(0, len(body), 1500):
+        client.messages.create(
+            body=body[start:start + 1500],
+            from_=from_number,
+            to=to,
         )
-    upload.raise_for_status()
-    media_id = upload.json()["id"]
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to,
-        "type": "document",
-        "document": {"id": media_id, "filename": pdf_path.name, "caption": "Tenancy Contract | عقد الإيجار"},
-    }
-    response = requests.post(
-        graph_url(f"{phone_number_id}/messages"),
-        headers={**auth_headers, "Content-Type": "application/json"},
-        json=payload,
-        timeout=30,
-    )
-    response.raise_for_status()
 
 
 def resolve_model(client: anthropic.Anthropic) -> str:
