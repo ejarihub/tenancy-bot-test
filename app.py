@@ -10,6 +10,7 @@ from typing import Any
 import anthropic
 import arabic_reshaper
 import requests
+from twilio.rest import Client
 from bidi.algorithm import get_display
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Response
 from pypdf import PdfReader, PdfWriter
